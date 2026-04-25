@@ -102,6 +102,9 @@ const Index = () => {
     if (!computedOffer) {
       setOffer(null);
       setStage("scanning");
+      // Le contexte a changé : on autorise une future offre (même ruleId
+      // si elle redevient éligible plus tard, hors cooldown).
+      seenRuleIdRef.current = null;
     }
   }, [computedOffer, stage]);
 
