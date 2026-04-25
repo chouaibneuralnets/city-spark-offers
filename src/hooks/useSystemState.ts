@@ -30,6 +30,10 @@ function rowToWeather(row: SystemStateRow): RealWeather {
 export function useSystemState() {
   const [weather, setWeather] = useState<RealWeather | null>(null);
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
+  // Mode STANDBY global piloté par le Dashboard Commerçant via la colonne
+  // optionnelle `system_state.rules_enabled`. Par défaut `true` pour la
+  // rétro-compatibilité (si la colonne n'existe pas, rien ne change).
+  const [rulesEnabled, setRulesEnabled] = useState<boolean>(true);
 
   useEffect(() => {
     let mounted = true;
@@ -38,6 +42,9 @@ export function useSystemState() {
       if (!mounted) return;
       setWeather(rowToWeather(row));
       setLastUpdate(row.updated_at);
+      // Si la colonne est absente (undefined) → on garde "true" (actif).
+      // Si elle vaut explicitement `false` → STANDBY.
+      setRulesEnabled(row.rules_enabled === false ? false : true);
     };
 
     // Fetch initial.
@@ -82,5 +89,5 @@ export function useSystemState() {
     };
   }, []);
 
-  return { weather, lastUpdate };
+  return { weather, lastUpdate, rulesEnabled };
 }
