@@ -208,6 +208,8 @@ const Index = () => {
             <span className="text-xs text-muted-foreground">
               {loading || !weather
                 ? "Synchronisation des règles marchand…"
+                : !rulesEnabled
+                ? "Café Müller en pause — aucune offre active"
                 : geo.distanceToMerchantM >= MAX_DISTANCE_M
                 ? `Hors zone (${geo.distanceToMerchantM}m) — approchez-vous du Café Müller`
                 : "SLM analyse votre contexte…"}
