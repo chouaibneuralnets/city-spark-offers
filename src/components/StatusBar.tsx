@@ -1,8 +1,15 @@
-import { Cloud, CloudRain, MapPin, Shield } from "lucide-react";
+import { Cloud, CloudRain, CloudSnow, MapPin, Shield, Sun } from "lucide-react";
 import type { ContextSnapshot } from "@/lib/context-engine";
 
 export const StatusBar = ({ ctx }: { ctx: ContextSnapshot }) => {
-  const Icon = ctx.weather.condition === "rain" ? CloudRain : Cloud;
+  const Icon =
+    ctx.weather.condition === "rain"
+      ? CloudRain
+      : ctx.weather.condition === "snow"
+      ? CloudSnow
+      : ctx.weather.condition === "sun"
+      ? Sun
+      : Cloud;
   return (
     <div className="absolute top-0 inset-x-0 z-20 px-4 pt-[max(env(safe-area-inset-top),1rem)] pb-3">
       <div className="glass rounded-3xl px-4 py-3 flex items-center justify-between">
@@ -29,7 +36,9 @@ export const StatusBar = ({ ctx }: { ctx: ContextSnapshot }) => {
       </div>
       <div className="mt-2 flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground">
         <Shield className="h-3 w-3 text-success" />
-        <span>Analyse par IA locale (SLM) · Données privées sur l'appareil · RGPD</span>
+        <span>
+          Analyse IA locale (SLM) · {ctx.weather.source === "openweather" ? "météo réelle" : "météo simulée"} · RGPD
+        </span>
       </div>
     </div>
   );

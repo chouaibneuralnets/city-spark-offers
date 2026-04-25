@@ -77,7 +77,7 @@ export const OfferCard = ({ offer, onAccept, onIgnore }: Props) => {
               onClick={onAccept}
               className="h-14 rounded-2xl bg-gradient-warm text-primary-foreground font-bold text-base shadow-warm hover:opacity-95 active:scale-[0.98] transition border-0"
             >
-              Accepter & Payer
+              Payer {offer.product} -{offer.discountPct}%
             </Button>
             <Button
               size="lg"
