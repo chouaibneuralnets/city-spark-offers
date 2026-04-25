@@ -60,3 +60,28 @@ export interface RedemptionRow {
   token: string;
   redeemed_at: string;
 }
+
+/**
+ * Table `public.system_state` — état météo/contexte synchronisé en temps réel
+ * depuis le Dashboard Commerçant. Source de vérité unique pour la météo
+ * affichée côté téléphone de Mia (plus d'appel API externe).
+ *
+ * Schéma SQL :
+ *   create table public.system_state (
+ *     id text primary key,
+ *     current_temp integer not null,
+ *     weather_condition text not null,   -- sun | rain | snow | cloud
+ *     city text not null default 'Stuttgart',
+ *     description text,
+ *     updated_at timestamptz not null default now()
+ *   );
+ *   alter publication supabase_realtime add table public.system_state;
+ */
+export interface SystemStateRow {
+  id: string;
+  current_temp: number;
+  weather_condition: WeatherKey;
+  city: string;
+  description: string | null;
+  updated_at: string;
+}
