@@ -7,19 +7,20 @@ import { StatusBar } from "@/components/StatusBar";
 import { OfferCard } from "@/components/OfferCard";
 import { PaymentTransition } from "@/components/PaymentTransition";
 import { RedemptionScreen } from "@/components/RedemptionScreen";
+import { DemoControls } from "@/components/DemoControls";
 import {
   evaluateRules,
   generateRedemptionToken,
+  MAX_DISTANCE_M,
   type ContextSnapshot,
   type DynamicOffer,
+  type PayoneDensity,
 } from "@/lib/context-engine";
 import { useOffersConfig } from "@/hooks/useOffersConfig";
 import { fetchWeather, type RealWeather } from "@/services/weather";
+import { useGeolocation } from "@/hooks/useGeolocation";
 
 type Stage = "scanning" | "offer" | "paying" | "redeemed";
-
-/** Distance simulée Mia → Café Müller (mètres). */
-const SIMULATED_DISTANCE_M = 80;
 
 const Index = () => {
   const { rules, loading } = useOffersConfig();
@@ -28,6 +29,13 @@ const Index = () => {
   const [offer, setOffer] = useState<DynamicOffer | null>(null);
   const [token, setToken] = useState<string>("");
   const [dismissedRuleIds, setDismissedRuleIds] = useState<Set<string>>(new Set());
+
+  // Signaux composites supplémentaires (Module 01).
+  const [simulateInside, setSimulateInside] = useState(false);
+  const [payoneDensity, setPayoneDensity] = useState<PayoneDensity>("low");
+  const [eventActive, setEventActive] = useState(false);
+
+  const geo = useGeolocation(simulateInside);
 
   // 1) Météo réelle (OpenWeather) — refetch toutes les 5 min.
   useEffect(() => {
@@ -49,14 +57,16 @@ const Index = () => {
     if (!weather) return null;
     return {
       weather,
-      geo: {
-        lat: 48.7758,
-        lng: 9.1829,
-        distanceToMerchantM: SIMULATED_DISTANCE_M,
+      geo,
+      payoneDensity,
+      localEvent: {
+        active: eventActive,
+        name: "Match VfB Stuttgart",
+        emoji: "⚽",
       },
       timestamp: Date.now(),
     };
-  }, [weather]);
+  }, [weather, geo, payoneDensity, eventActive]);
 
   // 3) Re-évaluation du moteur à chaque changement (règle, météo, etc.).
   const computedOffer = useMemo<DynamicOffer | null>(() => {
@@ -74,6 +84,9 @@ const Index = () => {
     }, 900);
     return () => clearTimeout(t);
   }, [computedOffer, stage, loading]);
+
+  const cycleDensity = () =>
+    setPayoneDensity((d) => (d === "low" ? "medium" : d === "medium" ? "high" : "low"));
 
   const handleAccept = () => setStage("paying");
   const handleIgnore = () => {
@@ -99,12 +112,25 @@ const Index = () => {
 
       {ctx && <StatusBar ctx={ctx} />}
 
+      <DemoControls
+        inZone={simulateInside}
+        onToggleZone={() => setSimulateInside((v) => !v)}
+        density={payoneDensity}
+        onCycleDensity={cycleDensity}
+        eventActive={eventActive}
+        onToggleEvent={() => setEventActive((v) => !v)}
+      />
+
       {stage === "scanning" && (
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 text-center">
           <div className="glass rounded-full px-4 py-2 inline-flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
             <span className="text-xs text-muted-foreground">
-              {loading || !weather ? "Synchronisation des règles marchand…" : "SLM analyse votre contexte…"}
+              {loading || !weather
+                ? "Synchronisation des règles marchand…"
+                : geo.distanceToMerchantM >= MAX_DISTANCE_M
+                ? `Hors zone (${geo.distanceToMerchantM}m) — approchez-vous du Café Müller`
+                : "SLM analyse votre contexte…"}
             </span>
           </div>
         </div>

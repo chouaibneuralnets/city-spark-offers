@@ -3,6 +3,7 @@ import { Clock, MapPin, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import cappuccino from "@/assets/cappuccino.jpg";
 import type { DynamicOffer } from "@/lib/context-engine";
+import { TriggerBadges } from "@/components/TriggerBadges";
 
 interface Props {
   offer: DynamicOffer;
@@ -54,6 +55,9 @@ export const OfferCard = ({ offer, onAccept, onIgnore }: Props) => {
 
         {/* Content */}
         <div className="p-5 pt-4">
+          <div className="mb-2.5">
+            <TriggerBadges triggers={offer.triggers} weatherEmoji={offer.emoji} />
+          </div>
           <p className="text-foreground text-[15px] leading-snug font-medium text-balance">
             {offer.message}
           </p>

@@ -5,17 +5,30 @@
 import type { OfferConfigRow, WeatherKey } from "@/integrations/supabase/client";
 import type { RealWeather } from "@/services/weather";
 
+export type PayoneDensity = "low" | "medium" | "high";
+
+export interface LocalEvent {
+  active: boolean;
+  name: string;
+  emoji: string;
+}
+
 export interface GeoSignal {
   lat: number;
   lng: number;
   distanceToMerchantM: number;
+  source: "gps" | "simulated";
 }
 
 export interface ContextSnapshot {
   weather: RealWeather;
   geo: GeoSignal;
+  payoneDensity: PayoneDensity;
+  localEvent: LocalEvent;
   timestamp: number;
 }
+
+export type TriggerReason = "weather" | "proximity" | "lowDensity" | "event";
 
 export interface DynamicOffer {
   id: string;
@@ -31,9 +44,32 @@ export interface DynamicOffer {
   emoji: string;
   reason: string;
   weather: WeatherKey;
+  triggers: TriggerReason[];
+  payoneDensity: PayoneDensity;
+  eventName?: string;
 }
 
-const MAX_DISTANCE_M = 200;
+export const MAX_DISTANCE_M = 200;
+export const MERCHANT_LAT = 48.7758;
+export const MERCHANT_LNG = 9.1829;
+
+/** Distance Haversine en mètres entre deux points GPS. */
+export function haversineMeters(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number,
+): number {
+  const R = 6_371_000;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return Math.round(2 * R * Math.asin(Math.sqrt(a)));
+}
+
 const DEFAULT_PRICE: Record<string, number> = {
   café: 4.2,
   cafe: 4.2,
@@ -81,6 +117,21 @@ export function evaluateRules(
   const emoji = WEATHER_EMOJI[ctx.weather.condition];
   const hook = WEATHER_HOOK[ctx.weather.condition];
 
+  // Triggers composites — ordre = priorité visuelle des badges.
+  const triggers: TriggerReason[] = ["weather", "proximity"];
+  if (ctx.payoneDensity === "low") triggers.push("lowDensity");
+  if (ctx.localEvent.active) triggers.push("event");
+
+  // Adaptation du message si évènement local actif.
+  const eventSuffix = ctx.localEvent.active
+    ? ` ${ctx.localEvent.emoji} Spécial « ${ctx.localEvent.name} » : passez avant la foule !`
+    : "";
+
+  const densityHint =
+    ctx.payoneDensity === "low"
+      ? " Le commerce est calme en ce moment 📉, c'est le bon moment."
+      : "";
+
   return {
     id: `offer_${match.id}_${ctx.timestamp}`,
     ruleId: match.id,
@@ -93,8 +144,11 @@ export function evaluateRules(
     distanceM: ctx.geo.distanceToMerchantM,
     emoji,
     weather: ctx.weather.condition,
-    reason: `Météo ${ctx.weather.condition} · ${ctx.weather.temperatureC}°C · ${ctx.geo.distanceToMerchantM}m`,
-    message: `${hook} ${emoji} Le Café Müller (à ${ctx.geo.distanceToMerchantM}m) vous offre un${needsE(match.product) ? "e" : ""} ${match.product} à -${match.discount_percent}% pendant 12 min.`,
+    triggers,
+    payoneDensity: ctx.payoneDensity,
+    eventName: ctx.localEvent.active ? ctx.localEvent.name : undefined,
+    reason: `Météo ${ctx.weather.condition} · ${ctx.weather.temperatureC}°C · ${ctx.geo.distanceToMerchantM}m · Payone ${ctx.payoneDensity}`,
+    message: `${hook} ${emoji} Le Café Müller (à ${ctx.geo.distanceToMerchantM}m) vous offre un${needsE(match.product) ? "e" : ""} ${match.product} à -${match.discount_percent}% pendant 12 min.${densityHint}${eventSuffix}`,
   };
 }
 
