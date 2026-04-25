@@ -84,4 +84,13 @@ export interface SystemStateRow {
   city: string;
   description: string | null;
   updated_at: string;
+  /**
+   * Interrupteur global "Règle active" côté Dashboard Commerçant.
+   * - true  → les offres peuvent s'afficher côté Mia
+   * - false → mode STANDBY : aucune popup ne doit apparaître, et toute
+   *           popup ouverte est immédiatement vidée.
+   * Optionnel : si la colonne n'existe pas, on considère par défaut `true`
+   * (rétro-compatibilité, pas de régression de la démo).
+   */
+  rules_enabled?: boolean | null;
 }

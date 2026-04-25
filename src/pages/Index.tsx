@@ -33,7 +33,7 @@ const Index = () => {
   // Météo synchronisée en temps réel depuis le Dashboard Commerçant
   // (table public.system_state, canal Realtime Supabase). Plus d'appel
   // OpenWeather : si le Dashboard passe à 12°C, Mia voit 12°C.
-  const { weather } = useSystemState();
+  const { weather, rulesEnabled } = useSystemState();
   const [stage, setStage] = useState<Stage>("scanning");
   const [offer, setOffer] = useState<DynamicOffer | null>(null);
   const [token, setToken] = useState<string>("");
@@ -79,11 +79,14 @@ const Index = () => {
   // 3) Re-évaluation du moteur à chaque changement (règle, météo, etc.).
   const computedOffer = useMemo<DynamicOffer | null>(() => {
     if (!ctx) return null;
+    // STANDBY global : si le Dashboard a coupé "Règle active", on ne calcule
+    // plus aucune offre, peu importe la météo / la position.
+    if (!rulesEnabled) return null;
     // Double filtre : cooldown 30 min ET ACK définitif (dismissed/accepted)
     // pour la durée de la démo. Une offre refusée ne revient JAMAIS.
     const eligible = rules.filter((r) => !isOnCooldown(r.id) && !hasAck(r.id));
     return evaluateRules(eligible, ctx);
-  }, [rules, ctx, isOnCooldown]);
+  }, [rules, ctx, isOnCooldown, rulesEnabled]);
 
   // 4) Apparition fluide après une courte phase de "scan".
   useEffect(() => {
@@ -116,6 +119,18 @@ const Index = () => {
       seenRuleIdRef.current = null;
     }
   }, [computedOffer, stage]);
+
+  // 4ter) Mode STANDBY : si le Dashboard désactive les règles pendant que
+  // Mia est sur une popup (offre, biométrie, paiement), on vide tout
+  // immédiatement et on revient au scan. Aucune offre ne reste à l'écran.
+  useEffect(() => {
+    if (rulesEnabled) return;
+    if (stage === "scanning") return;
+    setOffer(null);
+    setToken("");
+    setStage("scanning");
+    seenRuleIdRef.current = null;
+  }, [rulesEnabled, stage]);
 
   const cycleDensity = () =>
     setPayoneDensity((d) => (d === "low" ? "medium" : d === "medium" ? "high" : "low"));
@@ -193,6 +208,8 @@ const Index = () => {
             <span className="text-xs text-muted-foreground">
               {loading || !weather
                 ? "Synchronisation des règles marchand…"
+                : !rulesEnabled
+                ? "Café Müller en pause — aucune offre active"
                 : geo.distanceToMerchantM >= MAX_DISTANCE_M
                 ? `Hors zone (${geo.distanceToMerchantM}m) — approchez-vous du Café Müller`
                 : "SLM analyse votre contexte…"}
