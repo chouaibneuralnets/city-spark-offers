@@ -1,30 +1,25 @@
 /**
- * Context Detection Engine ("Le Cerveau")
- * Simulated real-time inputs: weather (OpenWeather-like), GPS, time.
- * Rule: temperature < 12°C AND distance to café < 100m  =>  trigger "Mia" offer.
+ * Context Decision Engine ("Le Cerveau")
+ * Croise: règles marchand (Supabase) × météo réelle (OpenWeather) × position GPS.
  */
-
-export interface WeatherSignal {
-  temperatureC: number;
-  condition: "rain" | "snow" | "clouds" | "clear";
-  city: string;
-}
+import type { OfferConfigRow, WeatherKey } from "@/integrations/supabase/client";
+import type { RealWeather } from "@/services/weather";
 
 export interface GeoSignal {
   lat: number;
   lng: number;
-  distanceToCafeM: number;
+  distanceToMerchantM: number;
 }
 
 export interface ContextSnapshot {
-  weather: WeatherSignal;
+  weather: RealWeather;
   geo: GeoSignal;
-  hour: number;
   timestamp: number;
 }
 
 export interface DynamicOffer {
   id: string;
+  ruleId: string;
   merchant: string;
   product: string;
   discountPct: number;
@@ -35,43 +30,80 @@ export interface DynamicOffer {
   message: string;
   emoji: string;
   reason: string;
+  weather: WeatherKey;
 }
 
-/** Mia's simulated baseline — Stuttgart, cold rainy morning, 80m from Café Müller. */
-export const MIA_SNAPSHOT: ContextSnapshot = {
-  weather: { temperatureC: 8, condition: "rain", city: "Stuttgart" },
-  geo: { lat: 48.7758, lng: 9.1829, distanceToCafeM: 80 },
-  hour: 9,
-  timestamp: Date.now(),
+const MAX_DISTANCE_M = 200;
+const DEFAULT_PRICE: Record<string, number> = {
+  café: 4.2,
+  cafe: 4.2,
+  cappuccino: 4.5,
+  pâtisserie: 5.5,
+  patisserie: 5.5,
+  croissant: 2.8,
 };
 
-/** Pure rule evaluator — runs "locally" (SLM simulation). */
-export function evaluateContext(ctx: ContextSnapshot): DynamicOffer | null {
-  const cold = ctx.weather.temperatureC < 12;
-  const close = ctx.geo.distanceToCafeM < 100;
-
-  if (cold && close) {
-    const original = 4.2;
-    const discount = 15;
-    return {
-      id: `offer_${ctx.timestamp}`,
-      merchant: "Café Müller",
-      product: "Cappuccino chaud",
-      discountPct: discount,
-      originalPrice: original,
-      finalPrice: +(original * (1 - discount / 100)).toFixed(2),
-      expiresInMin: 12,
-      distanceM: ctx.geo.distanceToCafeM,
-      emoji: ctx.weather.condition === "rain" ? "🌧️" : "❄️",
-      reason: `Température ${ctx.weather.temperatureC}°C · ${ctx.geo.distanceToCafeM}m du café`,
-      message: `Il fait froid dehors ? ${ctx.weather.condition === "rain" ? "🌧️" : "❄️"} Le Café Müller (à ${ctx.geo.distanceToCafeM}m) vous propose un Cappuccino chaud à -${discount}% pour les ${12} prochaines minutes.`,
-    };
-  }
-  return null;
+function priceFor(product: string): number {
+  const key = product.trim().toLowerCase();
+  return DEFAULT_PRICE[key] ?? 4.5;
 }
 
-/** Generate a unique redemption token for the QR code. */
-export function generateRedemptionToken(offerId: string): string {
-  const rand = Math.random().toString(36).slice(2, 10).toUpperCase();
-  return `CW|${offerId}|${rand}|${Date.now()}`;
+const WEATHER_EMOJI: Record<WeatherKey, string> = {
+  rain: "🌧️",
+  snow: "❄️",
+  sun: "☀️",
+  cloud: "☁️",
+};
+
+const WEATHER_HOOK: Record<WeatherKey, string> = {
+  rain: "Il pleut dehors ?",
+  snow: "Il neige dehors ?",
+  sun: "Profitez du soleil ?",
+  cloud: "Petite pause nuageuse ?",
+};
+
+/**
+ * Évalue les règles marchand contre le contexte courant.
+ * Renvoie la première offre qui matche, ou null.
+ */
+export function evaluateRules(
+  rules: OfferConfigRow[],
+  ctx: ContextSnapshot,
+): DynamicOffer | null {
+  const close = ctx.geo.distanceToMerchantM < MAX_DISTANCE_M;
+  if (!close) return null;
+
+  const match = rules.find((r) => r.active && r.weather === ctx.weather.condition);
+  if (!match) return null;
+
+  const original = priceFor(match.product);
+  const final = +(original * (1 - match.discount_percent / 100)).toFixed(2);
+  const emoji = WEATHER_EMOJI[ctx.weather.condition];
+  const hook = WEATHER_HOOK[ctx.weather.condition];
+
+  return {
+    id: `offer_${match.id}_${ctx.timestamp}`,
+    ruleId: match.id,
+    merchant: "Café Müller",
+    product: match.product,
+    discountPct: match.discount_percent,
+    originalPrice: original,
+    finalPrice: final,
+    expiresInMin: 12,
+    distanceM: ctx.geo.distanceToMerchantM,
+    emoji,
+    weather: ctx.weather.condition,
+    reason: `Météo ${ctx.weather.condition} · ${ctx.weather.temperatureC}°C · ${ctx.geo.distanceToMerchantM}m`,
+    message: `${hook} ${emoji} Le Café Müller (à ${ctx.geo.distanceToMerchantM}m) vous offre un${needsE(match.product) ? "e" : ""} ${match.product} à -${match.discount_percent}% pendant 12 min.`,
+  };
+}
+
+function needsE(product: string): boolean {
+  return /^(pâtisserie|patisserie|tarte|boisson)/i.test(product.trim());
+}
+
+/** Token de rédemption — encode l'ID de la règle pour validation Payone. */
+export function generateRedemptionToken(offerId: string, ruleId: string): string {
+  const rand = Math.random().toString(36).slice(2, 8).toUpperCase();
+  return `CW|${ruleId}|${offerId}|${rand}|${Date.now()}`;
 }
