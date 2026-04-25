@@ -47,7 +47,7 @@ export const RedemptionScreen = ({ offer, token, onClose }: Props) => {
           <div className="glass-strong rounded-3xl p-5">
             <div className="rounded-2xl bg-foreground p-4">
               <QRCodeSVG
-                value={token}
+                value={offer.id}
                 size={200}
                 bgColor="transparent"
                 fgColor="hsl(215 35% 9%)"
@@ -55,7 +55,10 @@ export const RedemptionScreen = ({ offer, token, onClose }: Props) => {
               />
             </div>
             <p className="mt-3 text-center text-[10px] text-muted-foreground font-mono break-all">
-              {token.slice(0, 32)}…
+              ID: {offer.id.slice(0, 28)}…
+            </p>
+            <p className="mt-1 text-center text-[10px] text-muted-foreground font-mono break-all opacity-60">
+              {token.slice(0, 28)}…
             </p>
           </div>
         </motion.div>
