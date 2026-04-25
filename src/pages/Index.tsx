@@ -89,6 +89,19 @@ const Index = () => {
     return () => clearTimeout(t);
   }, [computedOffer, stage, loading]);
 
+  // 4bis) Cohérence Dashboard ↔ Mia :
+  // si le contexte ne matche plus (ex. Mia sort du cercle bleu de 200m,
+  // ou la météo passe de "rain" à "sun"), on retire l'offre et on revient
+  // à l'écran de scan. L'utilisateur ne reste jamais bloqué sur une offre
+  // incohérente avec ce que voit le commerçant.
+  useEffect(() => {
+    if (stage !== "offer") return;
+    if (!computedOffer) {
+      setOffer(null);
+      setStage("scanning");
+    }
+  }, [computedOffer, stage]);
+
   const cycleDensity = () =>
     setPayoneDensity((d) => (d === "low" ? "medium" : d === "medium" ? "high" : "low"));
 
