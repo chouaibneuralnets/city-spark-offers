@@ -18,8 +18,8 @@ import {
   type PayoneDensity,
 } from "@/lib/context-engine";
 import { useOffersConfig } from "@/hooks/useOffersConfig";
-import { fetchWeather, type RealWeather } from "@/services/weather";
 import { useGeolocation } from "@/hooks/useGeolocation";
+import { useSystemState } from "@/hooks/useSystemState";
 import { getLifetimeCashback, logRedemption } from "@/services/redemptions";
 import { useWalletHeartbeat } from "@/hooks/useWalletHeartbeat";
 import { SimulatedLocationBadge } from "@/components/SimulatedLocationBadge";
@@ -28,7 +28,10 @@ type Stage = "scanning" | "offer" | "biometric" | "paying" | "redeemed";
 
 const Index = () => {
   const { rules, loading } = useOffersConfig();
-  const [weather, setWeather] = useState<RealWeather | null>(null);
+  // Météo synchronisée en temps réel depuis le Dashboard Commerçant
+  // (table public.system_state, canal Realtime Supabase). Plus d'appel
+  // OpenWeather : si le Dashboard passe à 12°C, Mia voit 12°C.
+  const { weather } = useSystemState();
   const [stage, setStage] = useState<Stage>("scanning");
   const [offer, setOffer] = useState<DynamicOffer | null>(null);
   const [token, setToken] = useState<string>("");
@@ -45,21 +48,6 @@ const Index = () => {
 
   // Heartbeat GPS — envoie la position simulée vers Supabase toutes les 10s.
   const heartbeat = useWalletHeartbeat(geo.lat, geo.lng, 10_000);
-
-  // 1) Météo réelle (OpenWeather) — refetch toutes les 5 min.
-  useEffect(() => {
-    let mounted = true;
-    const load = async () => {
-      const w = await fetchWeather();
-      if (mounted) setWeather(w);
-    };
-    load();
-    const id = setInterval(load, 5 * 60 * 1000);
-    return () => {
-      mounted = false;
-      clearInterval(id);
-    };
-  }, []);
 
   // 2) Contexte courant (météo + GPS simulé).
   const ctx = useMemo<ContextSnapshot | null>(() => {
