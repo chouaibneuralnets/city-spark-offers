@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { CityMap } from "@/components/CityMap";
@@ -22,6 +22,7 @@ import { useGeolocation } from "@/hooks/useGeolocation";
 import { useSystemState } from "@/hooks/useSystemState";
 import { getLifetimeCashback, logRedemption } from "@/services/redemptions";
 import { useWalletHeartbeat } from "@/hooks/useWalletHeartbeat";
+import { useOfferCooldown, COOLDOWN_MS } from "@/hooks/useOfferCooldown";
 import { SimulatedLocationBadge } from "@/components/SimulatedLocationBadge";
 
 type Stage = "scanning" | "offer" | "biometric" | "paying" | "redeemed";
@@ -35,9 +36,14 @@ const Index = () => {
   const [stage, setStage] = useState<Stage>("scanning");
   const [offer, setOffer] = useState<DynamicOffer | null>(null);
   const [token, setToken] = useState<string>("");
-  const [dismissedRuleIds, setDismissedRuleIds] = useState<Set<string>>(new Set());
   const [lifetimeCashback, setLifetimeCashback] = useState<number>(() => getLifetimeCashback());
   const [syncedToSupabase, setSyncedToSupabase] = useState<boolean>(false);
+
+  // Cooldown persistant : une règle ignorée/payée est masquée 30 min.
+  const { isOnCooldown, snooze } = useOfferCooldown();
+  // Garde-fou anti-doublon visuel : tant qu'une règle est "vue" dans la session
+  // courante, on ne ré-anime pas la même carte (évite la boucle 1s).
+  const seenRuleIdRef = useRef<string | null>(null);
 
   // Signaux composites supplémentaires (Module 01).
   const [simulateInside, setSimulateInside] = useState(false);
@@ -68,15 +74,19 @@ const Index = () => {
   // 3) Re-évaluation du moteur à chaque changement (règle, météo, etc.).
   const computedOffer = useMemo<DynamicOffer | null>(() => {
     if (!ctx) return null;
-    const eligible = rules.filter((r) => !dismissedRuleIds.has(r.id));
+    const eligible = rules.filter((r) => !isOnCooldown(r.id));
     return evaluateRules(eligible, ctx);
-  }, [rules, ctx, dismissedRuleIds]);
+  }, [rules, ctx, isOnCooldown]);
 
   // 4) Apparition fluide après une courte phase de "scan".
   useEffect(() => {
     if (stage !== "scanning" || loading || !computedOffer) return;
+    // Anti-boucle : si l'on vient déjà d'afficher cette règle dans la session,
+    // on ne ré-ouvre pas la carte (le moteur peut recalculer chaque seconde).
+    if (seenRuleIdRef.current === computedOffer.ruleId) return;
     const t = setTimeout(() => {
       setOffer(computedOffer);
+      seenRuleIdRef.current = computedOffer.ruleId;
       setStage("offer");
     }, 900);
     return () => clearTimeout(t);
@@ -103,7 +113,8 @@ const Index = () => {
   const handleBiometricCancel = () => setStage("offer");
   const handleIgnore = () => {
     if (offer) {
-      setDismissedRuleIds((prev) => new Set(prev).add(offer.ruleId));
+      // 30 min de cooldown persistant — l'offre ne reviendra pas en boucle.
+      snooze(offer.ruleId, COOLDOWN_MS);
     }
     setOffer(null);
     setStage("scanning");
@@ -116,14 +127,21 @@ const Index = () => {
     const t = generateRedemptionToken(offer.id, offer.ruleId);
     setToken(t);
     setStage("redeemed");
+    // Nettoyage immédiat : on snooze la règle pour qu'elle ne se ré-affiche
+    // pas derrière l'écran de récompense ni après fermeture.
+    snooze(offer.ruleId, COOLDOWN_MS);
     // Log Supabase + persist Loyalty (best-effort, ne bloque pas l'UI).
     const { syncedToSupabase: synced, lifetimeCashback: total } = await logRedemption(offer, t);
     setSyncedToSupabase(synced);
     setLifetimeCashback(total);
-    // L'offre étant marquée inactive côté DB, on l'écarte localement aussi.
-    setDismissedRuleIds((prev) => new Set(prev).add(offer.ruleId));
   };
-  const handleClose = () => setStage("offer");
+  const handleClose = () => {
+    // Fin du parcours : on ferme proprement et on retourne au scan.
+    // L'offre payée est en cooldown, elle ne reviendra pas tout de suite.
+    setOffer(null);
+    setToken("");
+    setStage("scanning");
+  };
 
   return (
     <PhoneFrame>
