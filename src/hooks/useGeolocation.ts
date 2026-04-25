@@ -15,8 +15,8 @@ export interface GeoState {
  * Le téléphone de Mia se "voit" à côté du commerçant pour la démo jury,
  * sans dépendre d'un vrai GPS ni des permissions navigateur.
  */
-const DEMO_LAT = 48.7758;
-const DEMO_LNG = 9.1829;
+const DEMO_LAT = 48.7759;
+const DEMO_LNG = 9.1830;
 
 /**
  * Géofencing en mode démo : la position est toujours forcée sur les
