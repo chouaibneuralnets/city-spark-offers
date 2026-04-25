@@ -24,6 +24,7 @@ import { getLifetimeCashback, logRedemption } from "@/services/redemptions";
 import { useWalletHeartbeat } from "@/hooks/useWalletHeartbeat";
 import { useOfferCooldown, COOLDOWN_MS } from "@/hooks/useOfferCooldown";
 import { SimulatedLocationBadge } from "@/components/SimulatedLocationBadge";
+import { ackOffer, hasAck } from "@/services/offerAcks";
 
 type Stage = "scanning" | "offer" | "biometric" | "paying" | "redeemed";
 
@@ -44,6 +45,10 @@ const Index = () => {
   // Garde-fou anti-doublon visuel : tant qu'une règle est "vue" dans la session
   // courante, on ne ré-anime pas la même carte (évite la boucle 1s).
   const seenRuleIdRef = useRef<string | null>(null);
+  // Filtre de doublon UX : si une popup est déjà ouverte (offer/biometric/
+  // paying/redeemed), on ignore toutes les nouvelles offres entrantes pour
+  // ne pas spammer Mia. On suit ce flag via le `stage`.
+  const isPopupOpen = stage !== "scanning";
 
   // Signaux composites supplémentaires (Module 01).
   const [simulateInside, setSimulateInside] = useState(false);
@@ -74,13 +79,17 @@ const Index = () => {
   // 3) Re-évaluation du moteur à chaque changement (règle, météo, etc.).
   const computedOffer = useMemo<DynamicOffer | null>(() => {
     if (!ctx) return null;
-    const eligible = rules.filter((r) => !isOnCooldown(r.id));
+    // Double filtre : cooldown 30 min ET ACK définitif (dismissed/accepted)
+    // pour la durée de la démo. Une offre refusée ne revient JAMAIS.
+    const eligible = rules.filter((r) => !isOnCooldown(r.id) && !hasAck(r.id));
     return evaluateRules(eligible, ctx);
   }, [rules, ctx, isOnCooldown]);
 
   // 4) Apparition fluide après une courte phase de "scan".
   useEffect(() => {
-    if (stage !== "scanning" || loading || !computedOffer) return;
+    // Filtre de doublon : aucune nouvelle offre ne peut s'ouvrir tant qu'une
+    // popup est déjà à l'écran. On reste sur celle qui est affichée.
+    if (isPopupOpen || loading || !computedOffer) return;
     // Anti-boucle : si l'on vient déjà d'afficher cette règle dans la session,
     // on ne ré-ouvre pas la carte (le moteur peut recalculer chaque seconde).
     if (seenRuleIdRef.current === computedOffer.ruleId) return;
@@ -90,7 +99,7 @@ const Index = () => {
       setStage("offer");
     }, 900);
     return () => clearTimeout(t);
-  }, [computedOffer, stage, loading]);
+  }, [computedOffer, isPopupOpen, loading]);
 
   // 4bis) Cohérence Dashboard ↔ Mia :
   // si le contexte ne matche plus (ex. Mia sort du cercle bleu de 200m,
@@ -112,12 +121,22 @@ const Index = () => {
     setPayoneDensity((d) => (d === "low" ? "medium" : d === "medium" ? "high" : "low"));
 
   const handleAccept = () => setStage("biometric");
-  const handleBiometricValidated = () => setStage("paying");
+  const handleBiometricValidated = () => {
+    // ACK "accepted" envoyé dès la validation biométrique (avant le paiement
+    // réel) : c'est l'engagement utilisateur côté UX.
+    if (offer) {
+      void ackOffer(offer.ruleId, offer.id, "accepted");
+    }
+    setStage("paying");
+  };
   const handleBiometricCancel = () => setStage("offer");
   const handleIgnore = () => {
     if (offer) {
       // 30 min de cooldown persistant — l'offre ne reviendra pas en boucle.
       snooze(offer.ruleId, COOLDOWN_MS);
+      // ACK "dismissed" + mémoire locale permanente : l'offre est définitivement
+      // retirée pour la durée de la démo (même après refresh).
+      void ackOffer(offer.ruleId, offer.id, "dismissed");
     }
     setOffer(null);
     setStage("scanning");
