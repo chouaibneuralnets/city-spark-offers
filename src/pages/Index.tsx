@@ -21,6 +21,8 @@ import { useOffersConfig } from "@/hooks/useOffersConfig";
 import { fetchWeather, type RealWeather } from "@/services/weather";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { getLifetimeCashback, logRedemption } from "@/services/redemptions";
+import { useWalletHeartbeat } from "@/hooks/useWalletHeartbeat";
+import { SimulatedLocationBadge } from "@/components/SimulatedLocationBadge";
 
 type Stage = "scanning" | "offer" | "biometric" | "paying" | "redeemed";
 
@@ -40,6 +42,9 @@ const Index = () => {
   const [eventActive, setEventActive] = useState(false);
 
   const geo = useGeolocation(simulateInside);
+
+  // Heartbeat GPS — envoie la position simulée vers Supabase toutes les 10s.
+  const heartbeat = useWalletHeartbeat(geo.lat, geo.lng, 10_000);
 
   // 1) Météo réelle (OpenWeather) — refetch toutes les 5 min.
   useEffect(() => {
@@ -150,6 +155,8 @@ const Index = () => {
         eventActive={eventActive}
         onToggleEvent={() => setEventActive((v) => !v)}
       />
+
+      <SimulatedLocationBadge lat={geo.lat} lng={geo.lng} heartbeat={heartbeat} />
 
       {stage === "scanning" && (
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 text-center">
