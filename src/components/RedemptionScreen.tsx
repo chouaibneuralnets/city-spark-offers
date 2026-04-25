@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
-import { Check, Coffee } from "lucide-react";
+import { Check, Coffee, ShieldCheck, Trophy, CloudOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { DynamicOffer } from "@/lib/context-engine";
 
@@ -8,9 +8,17 @@ interface Props {
   offer: DynamicOffer;
   token: string;
   onClose: () => void;
+  lifetimeCashback: number;
+  syncedToSupabase: boolean;
 }
 
-export const RedemptionScreen = ({ offer, token, onClose }: Props) => {
+export const RedemptionScreen = ({
+  offer,
+  token,
+  onClose,
+  lifetimeCashback,
+  syncedToSupabase,
+}: Props) => {
   const cashback = +(offer.originalPrice - offer.finalPrice).toFixed(2);
 
   return (
@@ -31,10 +39,18 @@ export const RedemptionScreen = ({ offer, token, onClose }: Props) => {
           >
             <Check className="h-8 w-8 text-success-foreground" strokeWidth={3} />
           </motion.div>
-          <h1 className="mt-4 text-2xl font-extrabold text-foreground">Paiement validé</h1>
+          <h1 className="mt-4 text-2xl font-extrabold text-foreground">
+            Paiement sécurisé via Payone
+          </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Présentez ce QR code au comptoir du <span className="text-foreground font-medium">{offer.merchant}</span>
+            Scannez à la caisse du <span className="text-foreground font-medium">{offer.merchant}</span>
           </p>
+          <div className="mt-3 inline-flex items-center gap-1.5 glass rounded-full px-3 py-1">
+            <ShieldCheck className="h-3 w-3 text-success" />
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Auth biométrique · Payone
+            </span>
+          </div>
         </div>
 
         {/* QR */}
@@ -86,6 +102,45 @@ export const RedemptionScreen = ({ offer, token, onClose }: Props) => {
             <span className="text-success font-extrabold text-lg">+{cashback.toFixed(2)} €</span>
           </div>
         </div>
+
+        {/* Loyalty — cumul depuis l'inscription */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.45, duration: 0.5 }}
+          className="mt-4 rounded-3xl p-5 bg-gradient-warm shadow-warm relative overflow-hidden"
+        >
+          <div className="absolute -right-6 -top-6 h-28 w-28 rounded-full bg-primary-foreground/10 blur-2xl" />
+          <div className="relative flex items-center gap-3">
+            <div className="h-12 w-12 rounded-2xl bg-primary-foreground/15 grid place-items-center backdrop-blur-sm">
+              <Trophy className="h-6 w-6 text-primary-foreground" />
+            </div>
+            <div className="flex-1">
+              <p className="text-[11px] uppercase tracking-wider font-semibold text-primary-foreground/80">
+                City-Wallet Loyalty
+              </p>
+              <p className="text-primary-foreground text-sm font-medium">
+                Total économisé depuis l'inscription
+              </p>
+            </div>
+            <motion.span
+              key={lifetimeCashback}
+              initial={{ scale: 0.85, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 220, damping: 14 }}
+              className="text-primary-foreground font-extrabold text-2xl tabular-nums"
+            >
+              {lifetimeCashback.toFixed(2)} €
+            </motion.span>
+          </div>
+        </motion.div>
+
+        {!syncedToSupabase && (
+          <div className="mt-3 flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground">
+            <CloudOff className="h-3 w-3" />
+            <span>Sync différée · table redemptions non détectée</span>
+          </div>
+        )}
 
         <div className="mt-auto pt-6">
           <Button

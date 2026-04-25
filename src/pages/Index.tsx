@@ -8,6 +8,7 @@ import { OfferCard } from "@/components/OfferCard";
 import { PaymentTransition } from "@/components/PaymentTransition";
 import { RedemptionScreen } from "@/components/RedemptionScreen";
 import { DemoControls } from "@/components/DemoControls";
+import { BiometricAuth } from "@/components/BiometricAuth";
 import {
   evaluateRules,
   generateRedemptionToken,
@@ -19,8 +20,9 @@ import {
 import { useOffersConfig } from "@/hooks/useOffersConfig";
 import { fetchWeather, type RealWeather } from "@/services/weather";
 import { useGeolocation } from "@/hooks/useGeolocation";
+import { getLifetimeCashback, logRedemption } from "@/services/redemptions";
 
-type Stage = "scanning" | "offer" | "paying" | "redeemed";
+type Stage = "scanning" | "offer" | "biometric" | "paying" | "redeemed";
 
 const Index = () => {
   const { rules, loading } = useOffersConfig();
@@ -29,6 +31,8 @@ const Index = () => {
   const [offer, setOffer] = useState<DynamicOffer | null>(null);
   const [token, setToken] = useState<string>("");
   const [dismissedRuleIds, setDismissedRuleIds] = useState<Set<string>>(new Set());
+  const [lifetimeCashback, setLifetimeCashback] = useState<number>(() => getLifetimeCashback());
+  const [syncedToSupabase, setSyncedToSupabase] = useState<boolean>(false);
 
   // Signaux composites supplémentaires (Module 01).
   const [simulateInside, setSimulateInside] = useState(false);
@@ -88,7 +92,9 @@ const Index = () => {
   const cycleDensity = () =>
     setPayoneDensity((d) => (d === "low" ? "medium" : d === "medium" ? "high" : "low"));
 
-  const handleAccept = () => setStage("paying");
+  const handleAccept = () => setStage("biometric");
+  const handleBiometricValidated = () => setStage("paying");
+  const handleBiometricCancel = () => setStage("offer");
   const handleIgnore = () => {
     if (offer) {
       setDismissedRuleIds((prev) => new Set(prev).add(offer.ruleId));
@@ -96,9 +102,20 @@ const Index = () => {
     setOffer(null);
     setStage("scanning");
   };
-  const handlePaymentDone = () => {
-    if (offer) setToken(generateRedemptionToken(offer.id, offer.ruleId));
+  const handlePaymentDone = async () => {
+    if (!offer) {
+      setStage("redeemed");
+      return;
+    }
+    const t = generateRedemptionToken(offer.id, offer.ruleId);
+    setToken(t);
     setStage("redeemed");
+    // Log Supabase + persist Loyalty (best-effort, ne bloque pas l'UI).
+    const { syncedToSupabase: synced, lifetimeCashback: total } = await logRedemption(offer, t);
+    setSyncedToSupabase(synced);
+    setLifetimeCashback(total);
+    // L'offre étant marquée inactive côté DB, on l'écarte localement aussi.
+    setDismissedRuleIds((prev) => new Set(prev).add(offer.ruleId));
   };
   const handleClose = () => setStage("offer");
 
@@ -145,11 +162,27 @@ const Index = () => {
             onIgnore={handleIgnore}
           />
         )}
+        {stage === "biometric" && offer && (
+          <BiometricAuth
+            key="bio"
+            amount={offer.finalPrice}
+            product={offer.product}
+            onValidated={handleBiometricValidated}
+            onCancel={handleBiometricCancel}
+          />
+        )}
         {stage === "paying" && (
           <PaymentTransition key="pay" onDone={handlePaymentDone} />
         )}
         {stage === "redeemed" && offer && (
-          <RedemptionScreen key="redeem" offer={offer} token={token} onClose={handleClose} />
+          <RedemptionScreen
+            key="redeem"
+            offer={offer}
+            token={token}
+            lifetimeCashback={lifetimeCashback}
+            syncedToSupabase={syncedToSupabase}
+            onClose={handleClose}
+          />
         )}
       </AnimatePresence>
     </PhoneFrame>
