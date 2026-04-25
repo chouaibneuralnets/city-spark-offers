@@ -109,6 +109,9 @@ export function evaluateRules(
   const close = ctx.geo.distanceToMerchantM < MAX_DISTANCE_M;
   if (!close) return null;
 
+  // Cohérence stricte avec le Dashboard Commerçant :
+  // - règle active
+  // - météo de la règle === météo réelle observée par Mia (ex: "sun" ne déclenche pas une offre "rain").
   const match = rules.find((r) => r.active && r.weather === ctx.weather.condition);
   if (!match) return null;
 
@@ -132,6 +135,19 @@ export function evaluateRules(
       ? " Le commerce est calme en ce moment 📉, c'est le bon moment."
       : "";
 
+  // Source de vérité du texte : Dashboard Commerçant (generated_text), puis message éditorial,
+  // sinon repli sur un texte composé à partir du contexte.
+  const dashboardText =
+    (match.generated_text && match.generated_text.trim()) ||
+    (match.message && match.message.trim()) ||
+    "";
+
+  const fallbackText = `${hook} ${emoji} Le Café Müller (à ${ctx.geo.distanceToMerchantM}m) vous offre un${needsE(match.product) ? "e" : ""} ${match.product} à -${match.discount_percent}% pendant 12 min.${densityHint}${eventSuffix}`;
+
+  const finalMessage = dashboardText
+    ? `${dashboardText}${eventSuffix}`
+    : fallbackText;
+
   return {
     id: `offer_${match.id}_${ctx.timestamp}`,
     ruleId: match.id,
@@ -148,7 +164,7 @@ export function evaluateRules(
     payoneDensity: ctx.payoneDensity,
     eventName: ctx.localEvent.active ? ctx.localEvent.name : undefined,
     reason: `Météo ${ctx.weather.condition} · ${ctx.weather.temperatureC}°C · ${ctx.geo.distanceToMerchantM}m · Payone ${ctx.payoneDensity}`,
-    message: `${hook} ${emoji} Le Café Müller (à ${ctx.geo.distanceToMerchantM}m) vous offre un${needsE(match.product) ? "e" : ""} ${match.product} à -${match.discount_percent}% pendant 12 min.${densityHint}${eventSuffix}`,
+    message: finalMessage,
   };
 }
 

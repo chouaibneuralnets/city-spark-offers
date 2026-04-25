@@ -24,6 +24,12 @@ export interface OfferConfigRow {
   active: boolean;
   created_at: string;
   updated_at: string;
+  /** Texte généré par l'IA côté Dashboard Commerçant (source de vérité). */
+  generated_text?: string | null;
+  /** Message éditorial saisi manuellement par le commerçant (fallback). */
+  message?: string | null;
+  /** Ton choisi côté Dashboard ("Amical", "Premium", etc.) — informatif. */
+  tone?: string | null;
 }
 
 /**
