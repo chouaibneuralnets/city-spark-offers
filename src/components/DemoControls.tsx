@@ -12,9 +12,9 @@ interface Props {
 }
 
 const DENSITY_LABEL: Record<PayoneDensity, string> = {
-  low: "Faible",
-  medium: "Moyenne",
-  high: "Élevée",
+  low: "Low",
+  medium: "Medium",
+  high: "High",
 };
 
 export const DemoControls = ({
@@ -34,7 +34,7 @@ export const DemoControls = ({
     >
       <div className="glass-strong rounded-2xl p-2.5">
         <p className="px-1 pb-1.5 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
-          Mode démo · jury
+          Demo mode · jury
         </p>
         <div className="grid grid-cols-3 gap-1.5">
           <button
@@ -46,7 +46,7 @@ export const DemoControls = ({
           >
             {inZone ? <MapPin className="h-4 w-4" /> : <MapPinOff className="h-4 w-4" />}
             <span className="text-[9px] font-semibold leading-tight text-center">
-              {inZone ? "Dans la zone" : "Simuler entrée"}
+              {inZone ? "In zone" : "Simulate entry"}
             </span>
           </button>
 
@@ -73,7 +73,7 @@ export const DemoControls = ({
           >
             <CalendarHeart className="h-4 w-4" />
             <span className="text-[9px] font-semibold leading-tight text-center">
-              {eventActive ? "Match ON" : "Événement"}
+              {eventActive ? "Match ON" : "Event"}
             </span>
           </button>
         </div>

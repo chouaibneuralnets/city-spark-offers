@@ -96,10 +96,10 @@ const WEATHER_EMOJI: Record<WeatherKey, string> = {
 };
 
 const WEATHER_HOOK: Record<WeatherKey, string> = {
-  rain: "Il pleut dehors ?",
-  snow: "Il neige dehors ?",
-  sun: "Profitez du soleil ?",
-  cloud: "Petite pause nuageuse ?",
+  rain: "Raining outside?",
+  snow: "Snowing outside?",
+  sun: "Enjoying the sun?",
+  cloud: "A cloudy little break?",
 };
 
 /** Emoji par produit — miroir de IPhonePreview.tsx (Dashboard projet 1). */
@@ -142,12 +142,12 @@ export function evaluateRules(
 
   // Adaptation du message si évènement local actif.
   const eventSuffix = ctx.localEvent.active
-    ? ` ${ctx.localEvent.emoji} Spécial « ${ctx.localEvent.name} » : passez avant la foule !`
+    ? ` ${ctx.localEvent.emoji} Special "${ctx.localEvent.name}": come in before the crowd!`
     : "";
 
   const densityHint =
     ctx.payoneDensity === "low"
-      ? " Le commerce est calme en ce moment 📉, c'est le bon moment."
+      ? " The shop is quiet right now 📉, perfect timing."
       : "";
 
   // Source de vérité du texte : Dashboard Commerçant (generated_text), puis message éditorial,
@@ -157,7 +157,7 @@ export function evaluateRules(
     (match.message && match.message.trim()) ||
     "";
 
-  const fallbackText = `${hook} ${emoji} Le Café Müller (à ${ctx.geo.distanceToMerchantM}m) vous offre un${needsE(match.product) ? "e" : ""} ${match.product} à -${match.discount_percent}% pendant 12 min.${densityHint}${eventSuffix}`;
+  const fallbackText = `${hook} ${emoji} Café Müller (${ctx.geo.distanceToMerchantM}m away) is offering ${match.product} at -${match.discount_percent}% for the next 12 min.${densityHint}${eventSuffix}`;
 
   const finalMessage = dashboardText
     ? `${dashboardText}${eventSuffix}`
@@ -178,9 +178,9 @@ export function evaluateRules(
     triggers,
     payoneDensity: ctx.payoneDensity,
     eventName: ctx.localEvent.active ? ctx.localEvent.name : undefined,
-    tone: (match.tone && match.tone.trim()) || "Amical",
+    tone: (match.tone && match.tone.trim()) || "Friendly",
     productEmoji: productEmojiFor(match.product),
-    reason: `Météo ${ctx.weather.condition} · ${ctx.weather.temperatureC}°C · ${ctx.geo.distanceToMerchantM}m · Payone ${ctx.payoneDensity}`,
+    reason: `Weather ${ctx.weather.condition} · ${ctx.weather.temperatureC}°C · ${ctx.geo.distanceToMerchantM}m · Payone ${ctx.payoneDensity}`,
     message: finalMessage,
   };
 }
