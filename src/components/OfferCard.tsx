@@ -22,11 +22,11 @@ export const OfferCard = ({ offer, onAccept, onIgnore }: Props) => {
 
   return (
     <motion.div
-      initial={{ y: -40, opacity: 0, scale: 0.96 }}
+      initial={{ y: 40, opacity: 0, scale: 0.96 }}
       animate={{ y: 0, opacity: 1, scale: 1 }}
-      exit={{ y: -40, opacity: 0 }}
+      exit={{ y: 40, opacity: 0 }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="absolute inset-x-3 top-12 z-30"
+      className="absolute inset-x-3 bottom-6 z-30"
     >
       {/* Notification iOS-style — miroir exact du Magic Preview du Dashboard */}
       <div className="relative">
