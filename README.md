@@ -1,50 +1,50 @@
 # 🌆 City Spark Offers
 
-> **Offres commerciales dynamiques géolocalisées** — une application React/TypeScript qui déclenche automatiquement des promotions personnalisées en temps réel selon la météo, la position GPS de l'utilisateur et les règles configurées par le marchand.
+> **Dynamic Geo-Located Commercial Offers** — a React/TypeScript application that automatically triggers personalized real-time promotions based on weather, user GPS position, and merchant-defined rules.
 
 ---
 
-## 📋 Table des matières
+## 📋 Table of Contents
 
-- [Vue d'ensemble](#-vue-densemble)
-- [Stack technique](#-stack-technique)
+- [Overview](#-overview)
+- [Tech Stack](#-tech-stack)
 - [Architecture](#-architecture)
-- [Structure du projet](#-structure-du-projet)
-- [Base de données Supabase](#-base-de-données-supabase)
-- [Moteur de décision contextuel](#-moteur-de-décision-contextuel)
-- [Hooks personnalisés](#-hooks-personnalisés)
-- [Services externes](#-services-externes)
-- [Flux utilisateur](#-flux-utilisateur)
-- [Installation et lancement](#-installation-et-lancement)
+- [Project Structure](#-project-structure)
+- [Supabase Database](#-supabase-database)
+- [Contextual Decision Engine](#-contextual-decision-engine)
+- [Custom Hooks](#-custom-hooks)
+- [External Services](#-external-services)
+- [User Flow](#-user-flow)
+- [Installation & Setup](#-installation--setup)
 
 ---
 
-## 🎯 Vue d'ensemble
+## 🎯 Overview
 
-**City Spark Offers** est un proof-of-concept d'un terminal de paiement mobile (style Payone) qui affiche des offres commerciales contextuelles en croisant :
+**City Spark Offers** is a proof-of-concept for a mobile payment terminal (Payone-style) that displays contextual commercial offers by crossing:
 
-- 🌤️ **La météo réelle** (OpenWeatherMap API)
-- 📍 **La position GPS** de l'utilisateur par rapport au marchand
-- 🚦 **La densité de trafic** (Payone density : low / medium / high)
-- 📋 **Les règles marchand** configurées et stockées dans Supabase
+- 🌤️ **Real-time Weather** (OpenWeatherMap API)
+- 📍 **GPS Position** of the user relative to the merchant
+- 🚦 **Traffic Density** (Payone density: low / medium / high)
+- 📋 **Merchant Rules** configured and stored in Supabase
 
-L'interface simule un téléphone mobile avec une carte interactive, une barre de statut et un flux d'offres — idéale pour des démonstrations B2B.
+The interface simulates a mobile phone with an interactive map, status bar, and offer feed — ideal for B2B demonstrations.
 
 ---
 
-## 🛠️ Stack technique
+## 🛠️ Tech Stack
 
-| Couche | Technologie | Version |
+| Layer | Technology | Version |
 |---|---|---|
-| Framework UI | React + TypeScript | 18.x / 5.x |
-| Build tool | Vite + SWC | 5.x |
+| UI Framework | React + TypeScript | 18.x / 5.x |
+| Build Tool | Vite + SWC | 5.x |
 | Styling | Tailwind CSS + shadcn/ui | 3.x |
-| Base de données | Supabase (PostgreSQL + Realtime) | 2.x |
-| Data fetching | TanStack React Query | v5 |
+| Database | Supabase (PostgreSQL + Realtime) | 2.x |
+| Data Fetching | TanStack React Query | v5 |
 | Routing | React Router DOM | v6 |
 | Animations | Framer Motion | — |
 | Validation | Zod | 3.x |
-| Tests | Vitest | 3.x |
+| Testing | Vitest | 3.x |
 | Linting | ESLint | 9.x |
 | Runtime | Bun | — |
 
@@ -57,67 +57,62 @@ L'interface simule un téléphone mobile avec une carte interactive, une barre d
 │                     PhoneFrame UI                    │
 │  ┌──────────┐  ┌──────────┐  ┌────────────────────┐ │
 │  │ StatusBar│  │ CityMap  │  │    OfferCard       │ │
-│  │ (météo)  │  │ + MapPins│  │ (offre dynamique)  │ │
+│  │ (weather)│  │ + MapPins│  │  (dynamic offer)   │ │
 │  └──────────┘  └──────────┘  └────────────────────┘ │
 └─────────────────────────────────────────────────────┘
             │              │
      ┌──────▼──────┐  ┌────▼────────────┐
      │ Context     │  │  Supabase       │
      │ Engine      │  │  (offers_config │
-     │ (Le Cerveau)│  │   redemptions)  │
+     │ "The Brain" │  │   redemptions)  │
      └──────┬──────┘  └─────────────────┘
             │
    ┌────────┼─────────┐
    ▼        ▼         ▼
-GPS API  OpenWeather  Payone
-                     Density
+GPS API  OpenWeather  Payone Density
 ```
 
 ---
 
-## 📁 Structure du projet
+## 📁 Project Structure
 
 ```
 city-spark-offers/
-├── public/                         # Fichiers statiques
+├── public/
 ├── src/
-│   ├── assets/                     # Images et icônes
-│   ├── components/                 # Composants UI
-│   │   ├── ui/                     # Composants shadcn/ui génériques
-│   │   ├── BiometricAuth.tsx       # Simulation authentification biométrique
-│   │   ├── CityMap.tsx             # Carte de la ville (position GPS)
-│   │   ├── DemoControls.tsx        # Panneau de contrôle demo
-│   │   ├── MapPins.tsx             # Épingles marchands sur la carte
-│   │   ├── NavLink.tsx             # Liens de navigation
-│   │   ├── OfferCard.tsx           # Carte d'affichage d'une offre
-│   │   ├── PaymentTransition.tsx   # Écran de transition paiement
-│   │   ├── PhoneFrame.tsx          # Wrapper cadre téléphone mobile
-│   │   ├── RedemptionScreen.tsx    # Écran de validation de l'offre
-│   │   ├── SimulatedLocationBadge.tsx  # Badge localisation simulée
-│   │   ├── StatusBar.tsx           # Barre de statut (heure, météo)
-│   │   └── TriggerBadges.tsx       # Badges raisons de déclenchement
+│   ├── assets/
+│   ├── components/
+│   │   ├── ui/                     # shadcn/ui generic components
+│   │   ├── BiometricAuth.tsx       # Biometric auth simulation
+│   │   ├── CityMap.tsx             # City map (GPS position)
+│   │   ├── DemoControls.tsx        # Demo control panel
+│   │   ├── MapPins.tsx             # Merchant pins on map
+│   │   ├── OfferCard.tsx           # Offer display card
+│   │   ├── PaymentTransition.tsx   # Payment transition screen
+│   │   ├── PhoneFrame.tsx          # Mobile phone frame wrapper
+│   │   ├── RedemptionScreen.tsx    # Offer redemption screen
+│   │   ├── StatusBar.tsx           # Status bar (time, weather)
+│   │   └── TriggerBadges.tsx       # Trigger reason badges
 │   ├── hooks/
-│   │   ├── useGeolocation.ts       # Géolocalisation GPS réelle ou simulée
-│   │   ├── useOfferCooldown.ts     # Cooldown entre deux offres
-│   │   ├── useOffersConfig.ts      # Règles marchand depuis Supabase
-│   │   ├── useSystemState.ts       # État global (météo, règles)
-│   │   └── useWalletHeartbeat.ts   # Ping de présence wallet
-│   ├── integrations/
-│   │   └── supabase/
-│   │       └── client.ts           # Client Supabase + types BDD
+│   │   ├── useGeolocation.ts       # Real or simulated GPS
+│   │   ├── useOfferCooldown.ts     # Cooldown between offers
+│   │   ├── useOffersConfig.ts      # Merchant rules from Supabase
+│   │   ├── useSystemState.ts       # Global state (weather, rules)
+│   │   └── useWalletHeartbeat.ts   # Wallet presence ping
+│   ├── integrations/supabase/
+│   │   └── client.ts               # Supabase client + DB types
 │   ├── lib/
-│   │   └── context-engine.ts       # ⚙️ Moteur de décision (core)
+│   │   └── context-engine.ts       # ⚙️ Decision Engine (Core)
 │   ├── pages/
-│   │   ├── Index.tsx               # Page principale (orchestration)
-│   │   └── NotFound.tsx            # Page 404
+│   │   ├── Index.tsx               # Main page (orchestration)
+│   │   └── NotFound.tsx            # 404 Page
 │   ├── services/
-│   │   ├── offerAcks.ts            # Acquittements offres
-│   │   ├── redemptions.ts          # Gestion des rachats en BDD
-│   │   ├── walletPings.ts          # Pings wallet vers Supabase
-│   │   └── weather.ts              # Appel API OpenWeatherMap
-│   ├── App.tsx                     # Root + routing
-│   └── index.css                   # Styles globaux
-├── index.html
+│   │   ├── offerAcks.ts            # Offer acknowledgments
+│   │   ├── redemptions.ts          # Redemption management
+│   │   ├── walletPings.ts          # Wallet pings to Supabase
+│   │   └── weather.ts              # OpenWeatherMap service
+│   ├── App.tsx
+│   └── index.css
 ├── package.json
 ├── tailwind.config.ts
 └── vite.config.ts
@@ -125,23 +120,23 @@ city-spark-offers/
 
 ---
 
-## 🗄️ Base de données Supabase
+## 🗄️ Supabase Database
 
-### Table `offers_config`
+### `offers_config` Table
 
-| Colonne | Type | Description |
+| Column | Type | Description |
 |---|---|---|
-| `id` | `uuid` | Identifiant unique de la règle |
-| `weather` | `sun\|rain\|snow\|cloud` | Condition météo déclenchante |
-| `discount_percent` | `integer` | Pourcentage de réduction |
-| `product` | `text` | Produit concerné |
-| `traffic_condition` | `low\|medium\|high\|null` | Condition trafic (optionnelle) |
-| `active` | `boolean` | Règle activée ou non |
-| `generated_text` | `text` | Texte généré par IA (Dashboard Commerçant) |
-| `message` | `text` | Message éditorial manuel (fallback) |
-| `tone` | `text` | Ton choisi : Amical, Premium, etc. |
+| `id` | `uuid` | Unique rule identifier |
+| `weather` | `sun\|rain\|snow\|cloud` | Triggering weather condition |
+| `discount_percent` | `integer` | Discount percentage |
+| `product` | `text` | Target product |
+| `traffic_condition` | `low\|medium\|high\|null` | Optional traffic condition |
+| `active` | `boolean` | Rule active status |
+| `generated_text` | `text` | AI-generated text (Merchant Dashboard) |
+| `message` | `text` | Manual editorial message (fallback) |
+| `tone` | `text` | Chosen tone (Friendly, Premium, etc.) |
 
-### Table `redemptions`
+### `redemptions` Table
 
 ```sql
 CREATE TABLE public.redemptions (
@@ -160,28 +155,23 @@ CREATE TABLE public.redemptions (
 
 ---
 
-## ⚙️ Moteur de décision contextuel
+## ⚙️ Contextual Decision Engine
 
-Fichier : `src/lib/context-engine.ts` — surnommé **"Le Cerveau"** dans le code source.
+File: `src/lib/context-engine.ts` — nicknamed **"The Brain"** in the source code.
 
-Il croise les règles marchand (Supabase) × la météo réelle (OpenWeather) × la position GPS.
-
-### Types principaux
+Matches merchant rules (Supabase) × real weather (OpenWeather) × GPS position.
 
 ```typescript
-// Types météo et trafic
 type WeatherKey = "sun" | "rain" | "snow" | "cloud";
 type PayoneDensity = "low" | "medium" | "high";
 
-// Signal géographique
 interface GeoSignal {
   lat: number;
   lng: number;
-  distanceToMerchantM: number;  // Distance en mètres
+  distanceToMerchantM: number; // Distance in meters
   source: "gps" | "simulated";
 }
 
-// Snapshot du contexte au moment T
 interface ContextSnapshot {
   weather: RealWeather;
   geo: GeoSignal;
@@ -190,24 +180,16 @@ interface ContextSnapshot {
   timestamp: number;
 }
 
-// Offre générée dynamiquement
 interface DynamicOffer {
   id: string;
   ruleId: string;
   merchant: string;
   product: string;
   discountPct: number;
-  triggers: TriggerReason[];  // Raisons de déclenchement
+  triggers: TriggerReason[];
 }
-```
 
-### Fonction principale
-
-```typescript
-/**
- * Évalue les règles marchand contre le contexte courant.
- * Retourne la première offre correspondante ou null.
- */
+// Returns first matching offer or null
 export function evaluateRules(
   rules: OfferConfigRow[],
   ctx: ContextSnapshot
@@ -216,74 +198,71 @@ export function evaluateRules(
 
 ---
 
-## 🪝 Hooks personnalisés
+## 🪝 Custom Hooks
 
-| Hook | Rôle |
+| Hook | Role |
 |---|---|
-| `useOffersConfig` | Fetch des règles depuis `offers_config` via Supabase |
-| `useGeolocation` | Géolocalisation GPS (réelle ou simulée) + distance au marchand |
-| `useSystemState` | État global : météo, densité trafic, activation des règles |
-| `useOfferCooldown` | Cooldown par `rule.id` pour éviter la répétition d'offres |
-| `useWalletHeartbeat` | Ping de présence wallet vers Supabase Realtime |
+| `useOffersConfig` | Fetches rules from `offers_config` via Supabase |
+| `useGeolocation` | GPS tracking (real or simulated) + distance calculation |
+| `useSystemState` | Global state: weather, traffic density, rule activation |
+| `useOfferCooldown` | Per-rule cooldown to prevent offer fatigue |
+| `useWalletHeartbeat` | Wallet presence pings via Supabase Realtime |
 
 ---
 
-## 🌐 Services externes
+## 🌐 External Services
 
 | Service | Usage |
 |---|---|
-| **Supabase** | BDD PostgreSQL + Realtime (5 events/sec) pour règles, rachats et pings |
-| **OpenWeatherMap** | Données météo réelles pour la logique contextuelle |
-| **Browser Geolocation API** | Géolocalisation native du navigateur |
+| **Supabase** | PostgreSQL DB + Realtime (5 events/sec) for rules, redemptions and pings |
+| **OpenWeatherMap** | Real-time weather data for decision logic |
+| **Browser Geolocation API** | Native device positioning |
 
 ---
 
-## 🔄 Flux utilisateur
+## 🔄 User Flow
 
 ```
-[App démarre]
+[App Starts]
       ↓
-useOffersConfig()         → Charge les règles depuis Supabase
-useGeolocation()          → Récupère la position GPS
-useSystemState()          → Météo + état des règles
+useOffersConfig()         → Loads rules from Supabase
+useGeolocation()          → Fetches GPS position
+useSystemState()          → Weather + System status
       ↓
-evaluateRules(rules, ctx) → Sélectionne la meilleure offre
+evaluateRules(rules, ctx) → Selects the best matching offer
       ↓
-[Affichage OfferCard dans PhoneFrame]
+[Display OfferCard in PhoneFrame]
       ↓
-[Utilisateur accepte l'offre]
+[User Accepts Offer]
       ↓
-PaymentTransition         → Animation de transition
-RedemptionScreen          → Confirmation + Token de rachat
-redemptions.ts            → Sauvegarde en BDD Supabase
-offerAcks.ts              → Marque l'offre comme acquittée
-useOfferCooldown          → Empêche la réapparition immédiate
+PaymentTransition         → Animated transition
+RedemptionScreen          → Confirmation + Redemption Token
+redemptions.ts            → Save to Supabase DB
+offerAcks.ts              → Mark offer as acknowledged
+useOfferCooldown          → Prevent immediate re-trigger
 ```
 
 ---
 
-## 🚀 Installation et lancement
+## 🚀 Installation & Setup
 
-### Prérequis
+### Prerequisites
 
-- [Bun](https://bun.sh/) installé
-- Un projet Supabase configuré
-- Une clé API OpenWeatherMap
+- [Bun](https://bun.sh/) installed
+- A configured Supabase project
+- An OpenWeatherMap API key
 
-### Installation
+### Install
 
 ```bash
-# Cloner le repo
 git clone https://github.com/chouaibneuralnets/city-spark-offers.git
 cd city-spark-offers
-
-# Installer les dépendances
 bun install
 ```
 
-### Variables d'environnement
+### Environment Variables
 
-Créer un fichier `.env.local` à la racine :
+Create a `.env.local` file at the root:
 
 ```env
 VITE_SUPABASE_URL=https://your-project.supabase.co
@@ -294,16 +273,16 @@ VITE_OPENWEATHER_API_KEY=your-openweather-key
 ### Scripts
 
 ```bash
-bun run dev          # Serveur de développement
-bun run build        # Build production
-bun run preview      # Prévisualiser le build
-bun run lint         # ESLint
-bun run test         # Tests Vitest (one-shot)
-bun run test:watch   # Tests en mode watch
+bun run dev          # Start development server
+bun run build        # Build for production
+bun run preview      # Preview production build
+bun run lint         # Run ESLint
+bun run test         # Run Vitest tests
+bun run test:watch   # Run tests in watch mode
 ```
 
 ---
 
-## 📄 Licence
+## 📄 License
 
-Projet privé — tous droits réservés.
+Private project — all rights reserved.
