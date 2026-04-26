@@ -23,8 +23,8 @@ export const PaymentTransition = ({ onDone }: { onDone: () => void }) => {
             <Lock className="h-10 w-10 text-primary-foreground" />
           </div>
         </div>
-        <p className="text-foreground text-lg font-semibold">Transaction sécurisée</p>
-        <p className="text-muted-foreground text-sm mt-1">Payone · chiffrement bout-en-bout</p>
+        <p className="text-foreground text-lg font-semibold">Secure transaction</p>
+        <p className="text-muted-foreground text-sm mt-1">Payone · end-to-end encryption</p>
 
         <div className="mt-6 mx-auto h-1 w-48 rounded-full bg-secondary overflow-hidden">
           <div className="h-full w-1/3 bg-gradient-warm animate-shimmer rounded-full" />

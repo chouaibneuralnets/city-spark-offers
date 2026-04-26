@@ -207,12 +207,12 @@ const Index = () => {
             <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
             <span className="text-xs text-muted-foreground">
               {loading || !weather
-                ? "Synchronisation des règles marchand…"
+                ? "Syncing merchant rules…"
                 : !rulesEnabled
-                ? "Café Müller en pause — aucune offre active"
+                ? "Café Müller paused — no active offers"
                 : geo.distanceToMerchantM >= MAX_DISTANCE_M
-                ? `Hors zone (${geo.distanceToMerchantM}m) — approchez-vous du Café Müller`
-                : "SLM analyse votre contexte…"}
+                ? `Out of range (${geo.distanceToMerchantM}m) — get closer to Café Müller`
+                : "SLM is analyzing your context…"}
             </span>
           </div>
         </div>

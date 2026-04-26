@@ -40,15 +40,15 @@ export const RedemptionScreen = ({
             <Check className="h-8 w-8 text-success-foreground" strokeWidth={3} />
           </motion.div>
           <h1 className="mt-4 text-2xl font-extrabold text-foreground">
-            Paiement sécurisé via Payone
+            Secure payment via Payone
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Scannez à la caisse du <span className="text-foreground font-medium">{offer.merchant}</span>
+            Scan at the counter of <span className="text-foreground font-medium">{offer.merchant}</span>
           </p>
           <div className="mt-3 inline-flex items-center gap-1.5 glass rounded-full px-3 py-1">
             <ShieldCheck className="h-3 w-3 text-success" />
             <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Auth biométrique · Payone
+              Biometric auth · Payone
             </span>
           </div>
         </div>
@@ -93,13 +93,13 @@ export const RedemptionScreen = ({
 
           <div className="h-px bg-border" />
 
-          <Row label="Prix d'origine" value={`${offer.originalPrice.toFixed(2)} €`} muted strike />
-          <Row label={`Réduction (-${offer.discountPct}%)`} value={`-${cashback.toFixed(2)} €`} accent />
-          <Row label="Total payé" value={`${offer.finalPrice.toFixed(2)} €`} bold />
+          <Row label="Original price" value={`€${offer.originalPrice.toFixed(2)}`} muted strike />
+          <Row label={`Discount (-${offer.discountPct}%)`} value={`-€${cashback.toFixed(2)}`} accent />
+          <Row label="Total paid" value={`€${offer.finalPrice.toFixed(2)}`} bold />
 
           <div className="mt-3 rounded-2xl bg-success/10 border border-success/30 p-3 flex items-center justify-between">
-            <span className="text-sm text-foreground">Cashback gagné</span>
-            <span className="text-success font-extrabold text-lg">+{cashback.toFixed(2)} €</span>
+            <span className="text-sm text-foreground">Cashback earned</span>
+            <span className="text-success font-extrabold text-lg">+€{cashback.toFixed(2)}</span>
           </div>
         </div>
 
@@ -120,7 +120,7 @@ export const RedemptionScreen = ({
                 City-Wallet Loyalty
               </p>
               <p className="text-primary-foreground text-sm font-medium">
-                Total économisé depuis l'inscription
+                Total saved since signup
               </p>
             </div>
             <motion.span
@@ -130,7 +130,7 @@ export const RedemptionScreen = ({
               transition={{ type: "spring", stiffness: 220, damping: 14 }}
               className="text-primary-foreground font-extrabold text-2xl tabular-nums"
             >
-              {lifetimeCashback.toFixed(2)} €
+              €{lifetimeCashback.toFixed(2)}
             </motion.span>
           </div>
         </motion.div>
@@ -138,7 +138,7 @@ export const RedemptionScreen = ({
         {!syncedToSupabase && (
           <div className="mt-3 flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground">
             <CloudOff className="h-3 w-3" />
-            <span>Sync différée · table redemptions non détectée</span>
+            <span>Sync deferred · redemptions table not found</span>
           </div>
         )}
 
@@ -148,10 +148,10 @@ export const RedemptionScreen = ({
             onClick={onClose}
             className="w-full h-14 rounded-2xl bg-gradient-warm text-primary-foreground font-bold text-base shadow-warm border-0 hover:opacity-95"
           >
-            Terminé
+            Done
           </Button>
           <p className="mt-3 text-center text-[10px] text-muted-foreground">
-            🔒 Analyse par IA locale (SLM) · Vos données restent sur cet appareil · RGPD
+            🔒 On-device AI (SLM) · Your data stays on this device · GDPR
           </p>
         </div>
       </div>

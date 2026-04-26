@@ -52,13 +52,13 @@ export const BiometricAuth = ({ amount, product, onValidated, onCancel }: Props)
         <div className="inline-flex items-center gap-1.5 glass rounded-full px-3 py-1 mb-4">
           <ShieldCheck className="h-3 w-3 text-success" />
           <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Payone · Authentification forte
+            Payone · Strong authentication
           </span>
         </div>
 
         <button
           onClick={startScan}
-          aria-label="Authentifier avec FaceID ou empreinte"
+          aria-label="Authenticate with FaceID or fingerprint"
           className="relative mx-auto block h-32 w-32 outline-none"
         >
           {/* Halos */}
@@ -107,19 +107,19 @@ export const BiometricAuth = ({ amount, product, onValidated, onCancel }: Props)
         </button>
 
         <h2 className="mt-6 text-xl font-extrabold text-foreground">
-          {phase === "prompt" && "Confirmez avec FaceID"}
-          {phase === "scanning" && "Vérification biométrique…"}
-          {phase === "success" && "Identité confirmée"}
+          {phase === "prompt" && "Confirm with FaceID"}
+          {phase === "scanning" && "Verifying biometrics…"}
+          {phase === "success" && "Identity confirmed"}
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
           {phase === "success"
-            ? "Transaction autorisée"
-            : `Régler ${amount.toFixed(2)} € · ${product}`}
+            ? "Transaction authorized"
+            : `Pay €${amount.toFixed(2)} · ${product}`}
         </p>
 
         <div className="mt-8 flex items-center justify-center gap-2 text-muted-foreground">
           <Fingerprint className="h-4 w-4" />
-          <span className="text-[11px]">ou utilisez votre empreinte</span>
+          <span className="text-[11px]">or use your fingerprint</span>
         </div>
 
         {phase === "prompt" && (
@@ -127,7 +127,7 @@ export const BiometricAuth = ({ amount, product, onValidated, onCancel }: Props)
             onClick={onCancel}
             className="mt-8 text-xs text-muted-foreground hover:text-foreground transition"
           >
-            Annuler
+            Cancel
           </button>
         )}
       </div>

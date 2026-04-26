@@ -2,10 +2,10 @@ import { motion } from "framer-motion";
 import type { TriggerReason } from "@/lib/context-engine";
 
 const LABELS: Record<TriggerReason, { emoji: string; label: string }> = {
-  weather: { emoji: "🌧️", label: "Météo" },
-  proximity: { emoji: "📍", label: "Proximité" },
-  lowDensity: { emoji: "📉", label: "Faible affluence" },
-  event: { emoji: "🎉", label: "Événement local" },
+  weather: { emoji: "🌧️", label: "Weather" },
+  proximity: { emoji: "📍", label: "Proximity" },
+  lowDensity: { emoji: "📉", label: "Low traffic" },
+  event: { emoji: "🎉", label: "Local event" },
 };
 
 interface Props {

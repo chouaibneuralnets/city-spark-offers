@@ -8,17 +8,28 @@ interface Props {
   onIgnore: () => void;
 }
 
-/** Emoji du ton — miroir du Dashboard (Magic Preview). */
+/** Tone emoji — mirrors the Dashboard (Magic Preview). */
 const TONE_EMOJI: Record<string, string> = {
   Amical: "😊",
+  Friendly: "😊",
   Premium: "✨",
   Urgent: "⚡",
   Élégant: "🎩",
   Elegant: "🎩",
 };
 
+/** Map French tone values (from Dashboard) to English labels. */
+const TONE_LABEL: Record<string, string> = {
+  Amical: "Friendly",
+  Premium: "Premium",
+  Urgent: "Urgent",
+  Élégant: "Elegant",
+  Elegant: "Elegant",
+};
+
 export const OfferCard = ({ offer, onAccept, onIgnore }: Props) => {
   const toneEmoji = TONE_EMOJI[offer.tone] ?? "😊";
+  const toneLabel = TONE_LABEL[offer.tone] ?? offer.tone;
 
   return (
     <motion.div
@@ -40,13 +51,13 @@ export const OfferCard = ({ offer, onAccept, onIgnore }: Props) => {
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between gap-2 mb-0.5">
                 <span className="text-[10px] font-semibold text-white/90 uppercase tracking-wider truncate">
-                  City-Wallet · {toneEmoji} {offer.tone}
+                  City-Wallet · {toneEmoji} {toneLabel}
                 </span>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] text-white/60">à l'instant</span>
+                  <span className="text-[10px] text-white/60">just now</span>
                   <button
                     onClick={onIgnore}
-                    aria-label="Ignorer"
+                    aria-label="Dismiss"
                     className="h-5 w-5 rounded-full bg-white/15 hover:bg-white/25 grid place-items-center transition"
                   >
                     <X className="h-3 w-3 text-white" />
@@ -66,13 +77,13 @@ export const OfferCard = ({ offer, onAccept, onIgnore }: Props) => {
                   onClick={onAccept}
                   className="flex-1 text-center text-[10px] font-semibold text-white bg-white/20 hover:bg-white/30 rounded-full py-1.5 transition active:scale-[0.97]"
                 >
-                  Réserver
+                  Reserve
                 </button>
                 <button
                   onClick={onAccept}
                   className="flex-1 text-center text-[10px] font-semibold text-white bg-white/15 hover:bg-white/25 rounded-full py-1.5 transition active:scale-[0.97]"
                 >
-                  Y aller
+                  Go there
                 </button>
               </div>
             </div>

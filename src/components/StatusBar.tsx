@@ -18,7 +18,7 @@ export const StatusBar = ({ ctx }: { ctx: ContextSnapshot }) => {
             <span className="font-extrabold text-primary-foreground text-sm">M</span>
           </div>
           <div className="leading-tight">
-            <p className="text-[11px] text-muted-foreground">Bonjour</p>
+            <p className="text-[11px] text-muted-foreground">Hello</p>
             <p className="text-sm font-semibold text-foreground">Mia</p>
           </div>
         </div>
@@ -37,7 +37,7 @@ export const StatusBar = ({ ctx }: { ctx: ContextSnapshot }) => {
       <div className="mt-2 flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground">
         <Shield className="h-3 w-3 text-success" />
         <span>
-          Analyse IA locale (SLM) · {ctx.weather.source === "openweather" ? "météo réelle" : "météo simulée"} · RGPD
+          On-device AI (SLM) · {ctx.weather.source === "openweather" ? "live weather" : "simulated weather"} · GDPR
         </span>
       </div>
     </div>
