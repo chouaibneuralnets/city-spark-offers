@@ -11,7 +11,7 @@ export const StatusBar = ({ ctx }: { ctx: ContextSnapshot }) => {
       ? Sun
       : Cloud;
   return (
-    <div className="absolute top-0 inset-x-0 z-20 px-4 pt-[max(env(safe-area-inset-top),1rem)] pb-3">
+    <div className="absolute top-0 inset-x-0 z-20 px-4 pt-[max(env(safe-area-inset-top),3.5rem)] pb-3">
       <div className="glass rounded-3xl px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="h-9 w-9 rounded-2xl bg-gradient-warm grid place-items-center shadow-warm">
