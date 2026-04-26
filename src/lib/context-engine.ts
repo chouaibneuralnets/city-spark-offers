@@ -47,6 +47,10 @@ export interface DynamicOffer {
   triggers: TriggerReason[];
   payoneDensity: PayoneDensity;
   eventName?: string;
+  /** Ton éditorial choisi côté Dashboard ("Amical", "Premium", "Urgent", "Élégant"). */
+  tone: string;
+  /** Emoji du produit, aligné sur le Magic Preview du Dashboard. */
+  productEmoji: string;
 }
 
 export const MAX_DISTANCE_M = 200;
@@ -97,6 +101,17 @@ const WEATHER_HOOK: Record<WeatherKey, string> = {
   sun: "Profitez du soleil ?",
   cloud: "Petite pause nuageuse ?",
 };
+
+/** Emoji par produit — miroir de IPhonePreview.tsx (Dashboard projet 1). */
+function productEmojiFor(product: string): string {
+  const k = product.trim().toLowerCase();
+  if (k.includes("café") || k.includes("cafe") || k.includes("cappuccino") || k.includes("expresso")) return "☕";
+  if (k.includes("chocolat")) return "🍫";
+  if (k.includes("croissant") || k.includes("pâtisserie") || k.includes("patisserie") || k.includes("tarte")) return "🥐";
+  if (k.includes("boisson") || k.includes("jus") || k.includes("smoothie")) return "🥤";
+  if (k.includes("thé") || k.includes("the ")) return "🍵";
+  return "✨";
+}
 
 /**
  * Évalue les règles marchand contre le contexte courant.
@@ -163,6 +178,8 @@ export function evaluateRules(
     triggers,
     payoneDensity: ctx.payoneDensity,
     eventName: ctx.localEvent.active ? ctx.localEvent.name : undefined,
+    tone: (match.tone && match.tone.trim()) || "Amical",
+    productEmoji: productEmojiFor(match.product),
     reason: `Météo ${ctx.weather.condition} · ${ctx.weather.temperatureC}°C · ${ctx.geo.distanceToMerchantM}m · Payone ${ctx.payoneDensity}`,
     message: finalMessage,
   };
